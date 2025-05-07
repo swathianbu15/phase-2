@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Exposing the Truth | Fake News Detection NLP</title>
+  <style>
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1f2937, #111827);
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px 12px 40px;
+      user-select: none;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      max-width: 350px;
+      width: 100%;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 900;
+      background: linear-gradient(90deg, #06b6d4, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    header p {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #9ca3af;
+      user-select: text;
+    }
+    main {
+      background-color: #111827;
+      padding: 16px 20px 24px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(20, 20, 20, 0.9);
+      width: 100%;
+      max-width: 350px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    textarea {
+      width: 100%;
+      height: 140px;
+      resize: none;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 1.4;
+      background-color: #1e293b;
+      color: #d1d5db;
+      box-shadow: inset 0 0 6px rgba(99, 102, 241, 0.4);
+      transition: box-shadow 0.3s ease;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    textarea:focus {
+      outline: none;
+      box-shadow: inset 0 0 10px #3b82f6;
+      background-color: #1e293b;
+      color: #f3f4f6;
+    }
+    button {
+      background: linear-gradient(90deg, #06b6d4, #3b82f6);
+      color: #fff;
+      border: none;
+      padding: 14px 20px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgb(6 182 212 / 0.6);
+      user-select: none;
+      transition: background 0.3s ease;
+      align-self: stretch;
+    }
+    button:hover,
+    button:focus {
+      background: linear-gradient(90deg, #3b82f6, #06b6d4);
+      outline: none;
+    }
+    #result {
+      background-color: #1e293b;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 4px 12px rgb(59 130 246 / 0.5);
+      font-size: 1.1rem;
+      font-weight: 700;
+      min-height: 72px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: #f9fafb;
+      user-select: text;
+    }
+    #result .label {
+      font-size: 1.4rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+    #result .confidence {
+      font-weight: 600;
+      color: #93c5fd;
+      font-size: 1rem;
+    }
+    footer {
+      margin-top: auto;
+      color: #6b7280;
+      font-size: 0.75rem;
+      user-select: text;
+      text-align: center;
+      max-width: 350px;
+      width: 100%;
+    }
+    /* Responsive constraints to fit 600px height max */
+    @media (max-height: 600px) {
+      textarea {
+        height: 120px;
+      }
+      button {
+        padding: 12px 16px;
+        font-size: 1rem;
+      }
+      #result {
+        min-height: 60px;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Exposing the Truth</h1>
+    <p>Advanced Fake News Detection Powered by NLP</p>
+  </header>
+  <main>
+    <textarea id="newsInput" placeholder="Paste the news article or headline here..." aria-label="News text input"></textarea>
+    <button id="detectBtn" aria-live="polite" aria-pressed="false">Detect Fake News</button>
+    <div id="result" aria-live="polite" role="region" aria-label="Detection result"></div>
+  </main>
+  <footer>
+    &copy; 2024 TruthTech Solutions. Powered by Natural Language Processing.
+  </footer>
+
+  <script>
+    (function () {
+      const detectBtn = document.getElementById('detectBtn');
+      const newsInput = document.getElementById('newsInput');
+      const resultDiv = document.getElementById('result');
+
+      // Common indicators for fake news presence (keywords, weighted arbitrarily)
+      const fakeIndicators = {
+        "shocking": 3,
+        "unbelievable": 3,
+        "secret": 2,
+        "exposed": 3,
+        "clickbait": 2,
+        "conspiracy": 3,
+        "hoax": 4,
+        "fake": 5,
+        "scandal": 3,
+        "outrage": 3,
+        "aliens": 4,
+        "government coverup": 5,
+        "miracle": 2,
+        "urgent": 2,
+        "breaking": 1,
+        "don't miss": 2,
+        "celebrity": 1,
+        "end of the world": 4,
+        "big pharma": 3,
+        "crisis": 2,
+        "secret formula": 4,
+        "you won't believe": 4,
+        "anonymous sources": 3,
+        "fake news": 5,
+        "unconfirmed": 3
+      };
+
+      // Common indicators for real news presence (words typically associated with authentic content)
+      const realIndicators = {
+        "according": 2,
+        "reported": 2,
+        "confirmed": 3,
+        "official": 3,
+        "statistics": 3,
+        "interview": 2,
+        "study": 3,
+        "research": 4,
+        "analysis": 3,
+        "source": 2,
+        "experts": 3,
+        "government": 2,
+        "press release": 4,
+        "data": 3,
+        "witness": 2,
+        "statement": 3,
+        "verified": 4,
+        "evidence": 4,
+        "documented": 4,
+        "transcript": 4
+      };
+
+      // Simple function to count keyword occurrences (case-insensitive)
+      function wordScore(text, keywords) {
+        let score = 0;
+        const lowerText = text.toLowerCase();
+        for (const key in keywords) {
+          const pattern = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, "gi");
+          const matches = lowerText.match(pattern);
+          if (matches) {
+            score += keywords[key] * matches.length;
+          }
+        }
+        return score;
+      }
+
+      // Main detection function running simple heuristic weighted scoring
+      function detectFakeNews(text) {
+        if (!text || text.trim().length < 20) {
+          return { label: "Input Too Short", confidence: 0, explanation: "Please enter a news article or headline with sufficient content to analyze." };
+        }
+
+        const fakeScore = wordScore(text, fakeIndicators);
+        const realScore = wordScore(text, realIndicators);
+        const totalScore = fakeScore + realScore;
+
+        let confidence = 0;
+        let label = "Uncertain";
+        let explanation = "";
+
+        if (totalScore === 0) {
+          label = "Uncertain";
+          confidence = 50;
+          explanation = "The text does not contain strong indicators of either fake or real news. Try adding more context.";
+        } else {
+          // Normalize confidence as percentage favoring the winner
+          if (fakeScore > realScore) {
+            label = "Fake News";
+            confidence = Math.round((fakeScore / totalScore) * 100);
+            explanation = "This article contains several phrases commonly associated with fake news.";
+          } else if (realScore > fakeScore) {
+            label = "Real News";
+            confidence = Math.round((realScore / totalScore) * 100);
+            explanation = "This article includes many terms typically found in verified news reports.";
+          } else {
+            label = "Balanced/Uncertain";
+            confidence = 50;
+            explanation = "The article contains indicators for both sides equally; manual review recommended.";
+          }
+        }
+        return { label, confidence, explanation };
+      }
+
+      // Function to update result display with colors and animation
+      function displayResult({ label, confidence, explanation }) {
+        let color = "#fbbf24"; // default amber for uncertain
+        if (label === "Fake News") color = "#dc2626"; // red
+        else if (label === "Real News") color = "#22c55e"; // green
+        else if (label === "Input Too Short") color = "#6b7280"; // gray
+
+        const html = `
+          <div class="label" style="color:${color}">${label}</div>
+          <div class="confidence" aria-live="polite">Confidence: ${confidence}%</div>
+          <div style="margin-top:8px; font-weight:400; font-size:0.9rem; color:#9ca3af;" role="note">${explanation}</div>
+        `;
+        resultDiv.innerHTML = html;
+      }
+
+      detectBtn.addEventListener('click', () => {
+        detectBtn.disabled = true;
+        detectBtn.setAttribute('aria-pressed', 'true');
+        resultDiv.textContent = "Analyzing...";
+        setTimeout(() => {
+          const text = newsInput.value.trim();
+          const result = detectFakeNews(text);
+          displayResult(result);
+          detectBtn.disabled = false;
+          detectBtn.setAttribute('aria-pressed', 'false');
+        }, 400);
+      });
+
+      // Optional: Enter key triggers detection within textarea
+      newsInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+          detectBtn.click();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
+</content>
+</create_file>
